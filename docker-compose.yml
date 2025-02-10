@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # MongoDB Replica Set - Node 1
+  mongo1:
+    image: mongo:5.0
+    container_name: mongo1
+    hostname: mongo1
+    ports:
+      - "2717:2717"
+    volumes:
+      - mongo1-data:/data/db1
+    command: >
+      mongod --replSet myReplicaSet --bind_ip_all
+    networks:
+      - chat-network
+
+  # MongoDB Replica Set - Node 2
+  mongo2:
+    image: mongo:5.0
+    container_name: mongo2
+    hostname: mongo2
+    ports:
+      - "2718:2717"
+    volumes:
+      - mongo2-data:/data/db2
+    command: >
+      mongod --replSet myReplicaSet --bind_ip_all
+    networks:
+      - chat-network
+
+  # MongoDB Replica Set - Node 3
+  mongo3:
+    image: mongo:5.0
+    container_name: mongo3
+    hostname: mongo3docker-compose up --build
+
+    ports:
+      - "2719:2717"
+    volumes:
+      - mongo3-data:/data/db3
+    command: >
+      mongod --replSet myReplicaSet --bind_ip_all
+    networks:
+      - chat-network
+
+  # Node.js Application
+  chat-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chat-app
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongo1:2717,mongo2:2718,mongo3:2719/chat?replicaSet=myReplicaSet
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    networks:
+      - chat-network
+
+volumes:
+  mongo1-data:
+  mongo2-data:
+  mongo3-data:
+
+networks:
+  chat-network:
